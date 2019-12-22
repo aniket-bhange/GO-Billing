@@ -17,13 +17,15 @@ type Model struct {
 
 type Users struct {
 	gorm.Model
-	Email     string `gorm:"unique" json:"email"`
-	Phone     string `json:"phone"`
-	Password  string `json:"password"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Username  string `gorm:"unique" json:"username"`
-	Status    bool   `json:"status"`
+	Email       string `gorm:"unique" json:"email"`
+	Phone       string `json:"phone"`
+	Password    string `json:"password"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Username    string `gorm:"unique" json:"username"`
+	Status      bool   `json:"status"`
+	Client      Client `gorm:"foreignkey:ClientRefer"`
+	ClientRefer uint
 }
 
 func GetMD5Hash(text string) string {
@@ -83,6 +85,18 @@ func (u *Users) UpdateUser(db *gorm.DB, uid uint64) (*Users, error) {
 	}
 	return u, nil
 
+}
+
+func (u *Users) FindAll(db *gorm.DB) (*[]Users, error) {
+	var err error
+	users := []Users{}
+	err = db.Debug().Model(&Users{}).Limit(100).Find(&users).Error
+
+	if err != nil {
+		return &[]Users{}, err
+	}
+
+	return &users, err
 }
 
 // func DBMigrate(db *gorm.DB) *gorm.DB {

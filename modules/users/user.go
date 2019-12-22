@@ -5,7 +5,6 @@ import (
 	database "billing-gorilla/db"
 	"billing-gorilla/model"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,7 +15,18 @@ import (
 func Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	fmt.Printf("This is user print")
+	user := model.Users{}
+
+	db := database.ConnectDB()
+	allUsers, err := user.FindAll(db.Db)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	config.RespondJSON(w, 200, allUsers)
+
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
