@@ -3,6 +3,7 @@ package model
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"log"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -48,6 +49,20 @@ func (u *Users) BeforeSave() error {
 	u.Password = pwd
 	return nil
 
+}
+
+func (u *Users) VerifyPassword(hashedPassword string, password string) bool {
+
+	log.Println(hashedPassword)
+
+	hasher := GetMD5Hash(password)
+
+	log.Println(hasher)
+
+	if hashedPassword == hasher {
+		return true
+	}
+	return false
 }
 
 func (u *Users) SaveUser(db *gorm.DB) (*Users, error) {

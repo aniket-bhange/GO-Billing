@@ -7,6 +7,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func Get(w http.ResponseWriter, r *http.Request) {
@@ -47,4 +50,33 @@ func CreateClient(w http.ResponseWriter, r *http.Request) {
 
 	config.RespondJSON(w, 200, newClient)
 
+}
+
+func Update(w http.ResponseWriter, r *http.Request) {
+	client := model.Client{}
+
+	vars := mux.Vars(r)
+	err := json.NewDecoder(r.Body).Decode(&client)
+
+	if err != nil {
+		config.RespondError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	uid, err := strconv.ParseUint(vars["id"], 10, 32)
+
+	if err != nil {
+		config.RespondError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	db := database.ConnectDB()
+	updatedClient, err := client.Update(db.Db, uid)
+
+	if err != nil {
+
+		config.RespondError(w, http.StatusInternalServerError, err)
+		return
+	}
+	config.RespondJSON(w, 200, updatedClient)
 }
