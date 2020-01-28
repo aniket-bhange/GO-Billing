@@ -8,11 +8,26 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
+type LoginResponse struct {
+	Token   string `json:"token"`
+	Message string `json:"message"`
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func setupResponse(w *http.ResponseWriter, req *http.Request) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+}
+
 func Login(w http.ResponseWriter, r *http.Request) {
+
 	body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
@@ -28,7 +43,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := SignIn(user.Email, user.Password)
+	authtoken, err := SignIn(user.Email, user.Password)
 
 	if err != nil {
 		err = errors.New("Incorrect details")
@@ -36,7 +51,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config.RespondJSON(w, http.StatusOK, token)
+	response := LoginResponse{
+		Token:   authtoken,
+		Message: "Login is successful",
+	}
+	config.RespondJSON(w, http.StatusOK, response)
 
 }
 
@@ -44,12 +63,9 @@ func SignIn(email, password string) (string, error) {
 	var err error
 
 	user := model.Users{}
-
 	db := database.ConnectDB()
 
 	err = db.Db.Debug().Model(model.Users{}).Where("email = ?", email).Take(&user).Error
-
-	log.Print(user.Password)
 
 	if err != nil {
 		return "", err

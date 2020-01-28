@@ -6,16 +6,11 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type ClientModel struct {
-	ID        uint `gorm:"primary_key"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
-}
-
 type Client struct {
-	Name string `json:"name"`
-	gorm.Model
+	ID        uint      `gorm:"primary_key;auto_increment" json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
 func (c *Client) Save(db *gorm.DB) (*Client, error) {
@@ -51,7 +46,7 @@ func (c *Client) Update(db *gorm.DB, id uint64) (*Client, error) {
 func (C *Client) FindAll(db *gorm.DB) (*[]Client, error) {
 	var err error
 	clients := []Client{}
-	err = db.Debug().Model(&Client{}).Limit(100).Find(&clients).Error
+	err = db.Debug().Model(&Client{}).Related(&Users{}).Error
 
 	if err != nil {
 		return &[]Client{}, err

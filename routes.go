@@ -3,6 +3,7 @@ package main
 import (
 	"billing-gorilla/modules/auth"
 	"billing-gorilla/modules/client"
+	"billing-gorilla/modules/product"
 	"billing-gorilla/modules/users"
 	"net/http"
 
@@ -61,6 +62,25 @@ var routes = Routes{
 		"/clients",
 		client.CreateClient,
 	},
+	Route{
+		"Get",
+		"GET",
+		"/products",
+		product.Get,
+	},
+	Route{
+		"Create",
+		"POST",
+		"/products",
+		product.CreateProduct,
+	},
+	Route{
+		"Update",
+		"PUT",
+		"/products/{id}",
+		product.UpdateProduct,
+	},
+
 	Route{
 		"Login",
 		"POST",

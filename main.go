@@ -10,6 +10,7 @@ import (
 
 	amq "billing-gorilla/amq"
 
+	"github.com/gorilla/handlers"
 	"github.com/joho/godotenv"
 )
 
@@ -44,7 +45,14 @@ func main() {
 	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	http.ListenAndServe(":8080", router)
+
+	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH"})
+	origins := handlers.AllowedOrigins([]string{"*"})
+
+	http.ListenAndServe(":8080", handlers.CORS(headers, methods, origins)(router))
+	// http.ListenAndServe(":8080", (router))
+
 	<-forever
 
 }
