@@ -3,7 +3,6 @@ package model
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"log"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -127,11 +126,41 @@ func (u *Users) FindOne(db *gorm.DB, uid uint64) (*UserResponse, error) {
 	user := Users{}
 	Result := UserResponse{}
 
-	row := db.Debug().Model(&Users{}).Where("id = ?", uid).First(&user).Row()
+	err = db.Debug().Model(&Users{}).Where("id = ?", uid).First(&user).Error
+
 	if err != nil {
 		return &UserResponse{}, err
 	}
-	log.Print(row)
+
+	Result.User = user
+	err = db.Debug().Model(&Client{}).Where("id = ?", user.ClientID).First(&Result.ClientRef).Error
+
+	if err != nil {
+		return &UserResponse{}, err
+	}
+
+	return &Result, err
+}
+
+func (u *Users) FindOneByField(db *gorm.DB, field string, fieldValue string) (*UserResponse, error) {
+	var err error
+	// var c Client
+	user := Users{}
+	Result := UserResponse{}
+
+	err = db.Debug().Model(&Users{}).Where(field+" = ?", fieldValue).First(&user).Error
+
+	if err != nil {
+		return &UserResponse{}, err
+	}
+
+	Result.User = user
+	err = db.Debug().Model(&Client{}).Where("id = ?", user.ClientID).First(&Result.ClientRef).Error
+
+	if err != nil {
+		return &UserResponse{}, err
+	}
+
 	return &Result, err
 }
 

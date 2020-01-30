@@ -26,8 +26,10 @@ func RespondJSON(w http.ResponseWriter, status int, payload interface{}) {
 func RespondError(w http.ResponseWriter, code int, err error) {
 	RespondJSON(w, code, struct {
 		Error string `json:"error"`
+		Code  int    `json:"code"`
 	}{
 		Error: err.Error(),
+		Code:  code,
 	})
 }
 

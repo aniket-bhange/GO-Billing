@@ -8,22 +8,21 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
 type LoginResponse struct {
-	Token   string `json:"token"`
-	Message string `json:"message"`
+	Token        string              `json:"token"`
+	Message      string              `json:"message"`
+	UserResponse *model.UserResponse `json:"userinfo"`
 }
 
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-func setupResponse(w *http.ResponseWriter, req *http.Request) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+type UserBasicInfo struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	ID        uint   `json:"user_id"`
+	Client    model.ClientResponse
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +35,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := model.Users{}
+	//var response model.UserResponse
+
 	err = json.Unmarshal(body, &user)
 
 	if err != nil {
@@ -43,7 +44,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authtoken, err := SignIn(user.Email, user.Password)
+	authtoken, err, response := SignIn(user.Email, user.Password)
 
 	if err != nil {
 		err = errors.New("Incorrect details")
@@ -51,30 +52,39 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := LoginResponse{
-		Token:   authtoken,
-		Message: "Login is successful",
+	responsebody := LoginResponse{
+		Token:        authtoken,
+		Message:      "Login is successful",
+		UserResponse: response,
 	}
-	config.RespondJSON(w, http.StatusOK, response)
+	config.RespondJSON(w, http.StatusOK, responsebody)
 
 }
 
-func SignIn(email, password string) (string, error) {
+func SignIn(email, password string) (string, error, *model.UserResponse) {
 	var err error
 
 	user := model.Users{}
+	response := model.UserResponse{}
 	db := database.ConnectDB()
 
-	err = db.Db.Debug().Model(model.Users{}).Where("email = ?", email).Take(&user).Error
+	// err = db.Db.Debug().Model(model.Users{}).Where("email = ?", email).Take(&user).Error
+
+	result, err := user.FindOneByField(db.Db, "email", email)
+
+	log.Printf("result %v", result)
 
 	if err != nil {
-		return "", err
+		return "", err, &response
 	}
 
-	isVerified := user.VerifyPassword(user.Password, password)
+	isVerified := user.VerifyPassword(result.User.Password, password)
 
 	if !isVerified {
-		return "", errors.New("Not matched")
+		return "", errors.New("Not matched"), &response
 	}
-	return core.CreateToken(user.ID)
+
+	token, err := core.CreateToken(user.ID)
+
+	return token, err, result
 }
